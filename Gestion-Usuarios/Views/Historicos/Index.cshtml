@@ -1,0 +1,47 @@
+﻿@{
+    ViewData["Title"] = "Historial de Movimientos";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h5 class="m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>Bitácora del Sistema</h5>
+    </div>
+    <div class="card-body">
+        <table id="tablaHistorial" class="table table-bordered table-sm" style="width:100%">
+            <thead class="table-light">
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Módulo</th>
+                    <th>Detalles</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2023-10-25 10:30</td>
+                    <td>Admin</td>
+                    <td>Creación</td>
+                    <td>Alumnos</td>
+                    <td>Registró al alumno 2023001</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#tablaHistorial').DataTable({
+                order: [[0, 'desc']], // Ordenar por fecha descendente
+                language: { url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json" },
+                layout: {
+                    topStart: {
+                        buttons: ['excel', 'pdf', 'print']
+                    }
+                }
+            });
+        });
+    </script>
+}
