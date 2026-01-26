@@ -13,10 +13,9 @@ namespace ChecklistSystems.Controllers
         [HttpPost]
         public IActionResult Login(string email, string password)
         {
-            // Aquí iría tu lógica real de validación de usuario
-            // Por ahora, simulamos un login exitoso redirigiendo al Home
+            
 
-            if (true) // Simulación
+            if (true) 
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -27,7 +26,7 @@ namespace ChecklistSystems.Controllers
         // Acción para el botón "Salir"
         public IActionResult Logout()
         {
-            // Aquí iría la lógica para limpiar cookies/sesión
+            
             return RedirectToAction("Login");
         }
     }
