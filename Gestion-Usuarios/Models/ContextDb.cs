@@ -12,3 +12,4 @@ namespace Gestion_Usuarios.Models
 		// public DbSet<Usuario> Usuarios { get; set; }
 		public DbSet<ManagementUser> ManagementUsers { get; set; }
 	}
+}

@@ -61,10 +61,10 @@ public class AuthController : Controller
 		_context.SaveChanges();
 
 		var claims = new List<Claim>
-	{
-		new Claim(ClaimTypes.NameIdentifier, user.management_user_ID.ToString()),
-		new Claim(ClaimTypes.Name, user.management_user_Username)
-	};
+		{
+			new Claim(ClaimTypes.NameIdentifier, user.management_user_ID.ToString()),
+			new Claim(ClaimTypes.Name, user.management_user_Username)
+		};
 
 		if (!string.IsNullOrEmpty(user.management_user_Email))
 			claims.Add(new Claim(ClaimTypes.Email, user.management_user_Email));
@@ -82,7 +82,7 @@ public class AuthController : Controller
 
 	public async Task<IActionResult> Logout()
 	{
-		await HttpContext.SignOutAsync();
+		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 		return RedirectToAction("Login");
 	}
 
