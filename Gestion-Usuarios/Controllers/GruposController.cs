@@ -6,8 +6,7 @@ namespace Gestion_Usuarios.Controllers
     {
         public IActionResult Index()
         {
-            // TODO: obtener lista de grupos
-            return View();
+            return View("~/Views/Dashboard/Grupos/Index.cshtml");
         }
     }
 }

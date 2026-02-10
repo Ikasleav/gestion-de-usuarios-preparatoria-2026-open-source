@@ -39,23 +39,10 @@
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-4">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#"><i class="fa-solid fa-list-check me-2"></i>Checklist Systems</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Inicio</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Usuarios" asp-action="Index">Usuarios</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Grupos" asp-action="Index">Grupos</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Alumnos" asp-action="Index">Alumnos</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Docentes" asp-action="Index">Docentes</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Historicos" asp-action="Index">Históricos</a></li>
-                    </ul>
-                    <div class="d-flex">
-                        <a asp-controller="Auth" asp-action="Logout" class="btn btn-outline-danger btn-sm">
-                            <i class="fa-solid fa-right-from-bracket"></i> Salir
-                        </a>
-                    </div>
+                <div class="d-flex">
+                    <a asp-controller="Auth" asp-action="Logout" class="btn btn-outline-danger btn-sm">
+                        <i class="fa-solid fa-right-from-bracket"></i> Salir
+                    </a>
                 </div>
             </div>
         </nav>

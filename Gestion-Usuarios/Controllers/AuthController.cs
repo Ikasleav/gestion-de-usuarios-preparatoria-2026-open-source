@@ -1,167 +1,189 @@
-﻿using Gestion_Usuarios.Models;
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
+using Gestion_Usuarios.Models;
 using Gestion_Usuarios.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 
-public class AuthController : Controller
+namespace Gestion_Usuarios.Controllers
 {
-	private readonly ContextDb _context;
-
-	public AuthController(ContextDb context)
+	public class AuthController : Controller
 	{
-		_context = context;
-	}
+		private readonly ContextDb _context;
 
-	[HttpGet]
-	public IActionResult Login()
-	{
-		return View();
-	}
-
-	[HttpPost]
-	public async Task<IActionResult> Login(LoginViewModel model)
-	{
-		if (!ModelState.IsValid)
-			return View(model);
-
-		var user = _context.ManagementUsers.FirstOrDefault(u =>
-			u.management_user_Username == model.UserOrEmail ||
-			u.management_user_Email == model.UserOrEmail);
-
-		if (user == null)
+		public AuthController(ContextDb context)
 		{
-			ViewBag.Error = "Usuario o correo incorrecto";
-			return View(model);
+			_context = context;
 		}
 
-		if (user.management_user_IsLocked)
+		[HttpGet]
+		public IActionResult Index()
 		{
-			ViewBag.Error = "Usuario bloqueado";
-			return View(model);
+			return View(new CombinedAuthViewModel());
 		}
 
-		if (!user.management_user_status)
+		[HttpGet]
+		public IActionResult Login()
 		{
-			ViewBag.Error = "Usuario inactivo";
-			return View(model);
+			// keep compatibility: redirect to the combined page
+			return RedirectToAction("Index");
 		}
 
-		if (!VerifyPassword(model.Password, user.management_user_PasswordHash))
+		[HttpPost]
+		public async Task<IActionResult> Login(LoginViewModel model)
 		{
-			ViewBag.Error = "Contraseña incorrecta";
-			return View(model);
+			if (!ModelState.IsValid)
+			{
+				// Return combined view with the login model so the view shows validation messages
+				ViewBag.ActiveForm = "login";
+				return View("Index", new CombinedAuthViewModel { Login = model });
+			}
+
+			var user = _context.ManagementUsers.FirstOrDefault(u =>
+				u.management_user_Username == model.UserOrEmail ||
+				u.management_user_Email == model.UserOrEmail);
+
+			if (user == null)
+			{
+				ModelState.AddModelError(string.Empty, "Usuario o correo incorrecto");
+				ViewBag.ActiveForm = "login";
+				return View("Index", new CombinedAuthViewModel { Login = model });
+			}
+
+			if (user.management_user_IsLocked)
+			{
+				ModelState.AddModelError(string.Empty, "Usuario bloqueado");
+				ViewBag.ActiveForm = "login";
+				return View("Index", new CombinedAuthViewModel { Login = model });
+			}
+
+			if (!user.management_user_status)
+			{
+				ModelState.AddModelError(string.Empty, "Usuario inactivo");
+				ViewBag.ActiveForm = "login";
+				return View("Index", new CombinedAuthViewModel { Login = model });
+			}
+
+			if (!VerifyPassword(model.Password, user.management_user_PasswordHash))
+			{
+				ModelState.AddModelError(string.Empty, "Contraseña incorrecta");
+				ViewBag.ActiveForm = "login";
+				return View("Index", new CombinedAuthViewModel { Login = model });
+			}
+
+			// Login exitoso
+			user.management_user_LastLoginDate = DateTime.Now;
+			_context.SaveChanges();
+
+			var claims = new List<Claim>
+			{
+				new Claim(ClaimTypes.NameIdentifier, user.management_user_ID.ToString()),
+				new Claim(ClaimTypes.Name, user.management_user_Username)
+			};
+
+			if (!string.IsNullOrEmpty(user.management_user_Email))
+				claims.Add(new Claim(ClaimTypes.Email, user.management_user_Email));
+
+			// Add a default role claim if needed (roles not stored in DB yet)
+			claims.Add(new Claim(ClaimTypes.Role, "Student"));
+
+			var identity = new ClaimsIdentity(
+				claims,
+				CookieAuthenticationDefaults.AuthenticationScheme);
+
+			await HttpContext.SignInAsync(
+				CookieAuthenticationDefaults.AuthenticationScheme,
+				new ClaimsPrincipal(identity));
+
+			// Redirect to Home index (user wants to land on Home first)
+			return RedirectToAction("Index", "Home");
 		}
 
-		// Login exitoso
-		user.management_user_LastLoginDate = DateTime.Now;
-		_context.SaveChanges();
-
-		var claims = new List<Claim>
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> Register(RegisterViewModel model)
 		{
-			new Claim(ClaimTypes.NameIdentifier, user.management_user_ID.ToString()),
-			new Claim(ClaimTypes.Name, user.management_user_Username)
-		};
+			if (!ModelState.IsValid)
+			{
+				// Return combined view and open register modal
+				ViewBag.ActiveForm = "register";
+				return View("Index", new CombinedAuthViewModel { Register = model });
+			}
 
-		if (!string.IsNullOrEmpty(user.management_user_Email))
-			claims.Add(new Claim(ClaimTypes.Email, user.management_user_Email));
+			// Check username/email uniqueness
+			if (_context.ManagementUsers.Any(u => u.management_user_Username == model.Username))
+			{
+				ModelState.AddModelError(nameof(model.Username), "El nombre de usuario ya existe.");
+				ViewBag.ActiveForm = "register";
+				return View("Index", new CombinedAuthViewModel { Register = model });
+			}
 
-		// Add a default role claim if needed (roles not stored in DB yet)
-		claims.Add(new Claim(ClaimTypes.Role, "Student"));
+			if (_context.ManagementUsers.Any(u => u.management_user_Email == model.Email))
+			{
+				ModelState.AddModelError(nameof(model.Email), "El correo ya está registrado.");
+				ViewBag.ActiveForm = "register";
+				return View("Index", new CombinedAuthViewModel { Register = model });
+			}
 
-		var identity = new ClaimsIdentity(
-			claims,
-			CookieAuthenticationDefaults.AuthenticationScheme);
+			// Create user with hashed password
+			var user = new ManagementUser
+			{
+				management_user_Username = model.Username,
+				management_user_Email = model.Email,
+				management_user_PasswordHash = HashPassword(model.Password),
+				management_user_IsLocked = false,
+				management_user_status = true,
+				management_user_createdDate = DateTime.Now
+			};
 
-		await HttpContext.SignInAsync(
-			CookieAuthenticationDefaults.AuthenticationScheme,
-			new ClaimsPrincipal(identity));
+			_context.ManagementUsers.Add(user);
+			_context.SaveChanges();
 
-		return RedirectToAction("Index", "Home");
-	}
+			// Optionally auto-login after registration
+			var claims = new List<Claim>
+			{
+				new Claim(ClaimTypes.NameIdentifier, user.management_user_ID.ToString()),
+				new Claim(ClaimTypes.Name, user.management_user_Username),
+				new Claim(ClaimTypes.Email, user.management_user_Email ?? string.Empty),
+				new Claim(ClaimTypes.Role, "Student")
+			};
 
-	[HttpGet]
-	public IActionResult Register()
-	{
-		return View();
-	}
+			var identity = new ClaimsIdentity(
+				claims,
+				CookieAuthenticationDefaults.AuthenticationScheme);
 
-	[HttpPost]
-	[ValidateAntiForgeryToken]
-	public async Task<IActionResult> Register(RegisterViewModel model)
-	{
-		if (!ModelState.IsValid)
-			return View(model);
+			await HttpContext.SignInAsync(
+				CookieAuthenticationDefaults.AuthenticationScheme,
+				new ClaimsPrincipal(identity));
 
-		// Check username/email uniqueness
-		if (_context.ManagementUsers.Any(u => u.management_user_Username == model.Username))
-		{
-			ModelState.AddModelError(nameof(model.Username), "El nombre de usuario ya existe.");
-			return View(model);
+			// Redirect to Home index after registration
+			return RedirectToAction("Index", "Home");
 		}
 
-		if (_context.ManagementUsers.Any(u => u.management_user_Email == model.Email))
+		public async Task<IActionResult> Logout()
 		{
-			ModelState.AddModelError(nameof(model.Email), "El correo ya está registrado.");
-			return View(model);
+			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+			return RedirectToAction("Index");
 		}
 
-		// Create user with hashed password
-		var user = new ManagementUser
+		private bool VerifyPassword(string password, string hash)
 		{
-			management_user_Username = model.Username,
-			management_user_Email = model.Email,
-			management_user_PasswordHash = HashPassword(model.Password),
-			management_user_IsLocked = false,
-			management_user_status = true,
-			management_user_createdDate = DateTime.Now
-			// management_user_PersonID can be set later when you create the person record
-		};
+			using SHA256 sha = SHA256.Create();
+			var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+			var inputHash = Convert.ToBase64String(bytes);
+			return inputHash == hash;
+		}
 
-		_context.ManagementUsers.Add(user);
-		_context.SaveChanges();
-
-		// Optionally auto-login after registration
-		var claims = new List<Claim>
+		private string HashPassword(string password)
 		{
-			new Claim(ClaimTypes.NameIdentifier, user.management_user_ID.ToString()),
-			new Claim(ClaimTypes.Name, user.management_user_Username),
-			new Claim(ClaimTypes.Email, user.management_user_Email ?? string.Empty),
-			new Claim(ClaimTypes.Role, "Student")
-		};
-
-		var identity = new ClaimsIdentity(
-			claims,
-			CookieAuthenticationDefaults.AuthenticationScheme);
-
-		await HttpContext.SignInAsync(
-			CookieAuthenticationDefaults.AuthenticationScheme,
-			new ClaimsPrincipal(identity));
-
-		return RedirectToAction("Index", "Home");
-	}
-
-	public async Task<IActionResult> Logout()
-	{
-		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-		return RedirectToAction("Login");
-	}
-
-	private bool VerifyPassword(string password, string hash)
-	{
-		using SHA256 sha = SHA256.Create();
-		var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-		var inputHash = Convert.ToBase64String(bytes);
-		return inputHash == hash;
-	}
-
-	private string HashPassword(string password)
-	{
-		using SHA256 sha = SHA256.Create();
-		var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-		return Convert.ToBase64String(bytes);
+			using SHA256 sha = SHA256.Create();
+			var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+			return Convert.ToBase64String(bytes);
+		}
 	}
 }

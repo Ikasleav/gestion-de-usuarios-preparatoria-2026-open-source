@@ -1,13 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Gestion_Usuarios.Controllers
 {
+    [Authorize]
     public class UsuariosController : Controller
     {
         public IActionResult Index()
         {
-            // TODO: sustituir por datos reales desde la capa de servicio / BD
-            return View();
+            return View("~/Views/Dashboard/Usuarios/Index.cshtml");
         }
     }
 }

@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gestion_Usuarios.Controllers
 {
     [Authorize]
-    public class HistoricosController : Controller
+    public class DashboardController : Controller
     {
         public IActionResult Index()
         {
-            return View("~/Views/Dashboard/Historicos/Index.cshtml");
+            return View();
         }
     }
 }
