@@ -45,6 +45,15 @@ namespace Gestion_Usuarios.Models
 		// Mapea: s.management_student_status (1 = Activo, 0 = Inactivo/Borrado lógico)
 		public bool EsActivo { get; set; }
 
+		// Mapea: p.management_person_CURP o person_CURP
+		public string? CURP { get; set; }
+
+		// Mapea: p.person_Email o management_person_Email
+		public string? Email { get; set; }
+
+		// Mapea: group_Code, group_Name o cálculo en el SP (texto que quieres mostrar en la columna "Grupo")
+		public string Grupo { get; set; } = string.Empty;
+
 		// Helpers para las Badges de la vista (Colores)
 		public string EstadoBadgeClass
 		{

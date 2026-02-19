@@ -1,3 +1,5 @@
+@model List<Gestion_Usuarios.Models.DocenteViewModel>
+
 @{
     ViewData["Title"] = "Gestión de Docentes";
 }
@@ -11,24 +13,47 @@
         <table id="tablaDocentes" class="table table-striped table-hover" style="width:100%">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Carrera</th>
+                    <th>No. Empleado</th>
+                    <th>Nombre Completo</th>
                     <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Estatus</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>100</td>
-                    <td>Profa. García</td>
-                    <td>Arquitectura</td>
-                    <td>garcia@ejemplo.com</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
+                @if (Model != null && Model.Count > 0)
+                {
+                    @foreach (var docente in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="badge bg-secondary">@docente.management_teacher_EmployeeNumber</span>
+                            </td>
+                            <td>@docente.NombreCompleto</td>
+                            <td>@docente.management_user_Email</td>
+                            <td>@docente.management_person_Phone</td>
+                            <td>
+                                @if (docente.teacher_statuscode == "ACTIVO")
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">@docente.teacher_statuscode</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="editarDocente(@docente.management_user_ID)">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="eliminarDocente(@docente.management_user_ID)">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
             </tbody>
         </table>
     </div>
@@ -38,8 +63,27 @@
     <script>
         $(document).ready(function () {
             $('#tablaDocentes').DataTable({
-                language: { url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json" }
+                responsive: true,
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
+                },
+                columnDefs: [
+                    { className: "text-center", targets: [0, 4, 5] }, // Centrar columnas específicas
+                    { orderable: false, targets: 5 } // Desactivar ordenamiento en acciones
+                ]
             });
         });
+
+        function editarDocente(id) {
+            // Lógica para redirigir o abrir modal
+            console.log("Editando docente usuario ID: " + id);
+        }
+
+        function eliminarDocente(id) {
+            if(confirm("¿Estás seguro de desactivar este docente?")) {
+                // Lógica de eliminación
+                console.log("Eliminando docente usuario ID: " + id);
+            }
+        }
     </script>
-}   
+}

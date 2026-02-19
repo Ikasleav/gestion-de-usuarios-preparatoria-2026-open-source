@@ -25,7 +25,7 @@
                 {
                     foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-id="@item.Id">
                             <td>@item.Identificador</td>
 
                             <td>@item.NombreCompleto</td>
@@ -66,34 +66,65 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/datatables_tools.js"></script>
     <script>
         $(document).ready(function () {
-            $('#miTabla').DataTable({
-                responsive: true,
+            // Inicializar DataTable
+            const options = {
+                searchBuilder: true,
+                colVis: true,
+                colReorder: true
+            };
+
+            const dt = new DataTableInitializer(options);
+
+            window.alumnosTable = dt.initialize('#miTabla', {
                 language: {
-                    url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
-                },
-                layout: {
-                    topStart: {
-                        buttons: [
-                            { extend: 'copy', text: '<i class="fa-solid fa-copy"></i> Copiar', className: 'btn btn-secondary btn-sm' },
-                            { extend: 'excel', text: '<i class="fa-solid fa-file-excel"></i> Excel', className: 'btn btn-success btn-sm' },
-                            { extend: 'pdf', text: '<i class="fa-solid fa-file-pdf"></i> PDF', className: 'btn btn-danger btn-sm' },
-                            { extend: 'print', text: '<i class="fa-solid fa-print"></i> Imprimir', className: 'btn btn-info btn-sm' }
-                        ]
-                    }
+                    url: 'https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json'
                 }
             });
         });
 
         function editarAlumno(id) {
-            // Lógica para redirigir a editar
-            console.log("Editando ID: " + id);
+            // Redirigir a la ruta de edición del alumno
+            if (!id || id <= 0) return;
+            window.location.href = `/Alumnos/Edit/${id}`;
         }
 
         function eliminarAlumno(id) {
-            // Lógica para confirmar eliminación
-             console.log("Eliminando ID: " + id);
+            // Confirmación y llamada al endpoint de eliminación
+            if (!confirm('¿Deseas eliminar el alumno seleccionado?')) return;
+
+            fetch(`/Alumnos/Delete/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(r => {
+                if (r.ok) {
+                    // Soft-delete: actualizar la fila en la UI sin recargar
+                    const $row = $(`#miTabla tbody tr[data-id='${id}']`);
+
+                    if ($row.length) {
+                        // Actualizar badge de estado (columna 5, índice 4)
+                        const $estadoCell = $row.find('td').eq(4);
+                        $estadoCell.find('span').removeClass().addClass('badge bg-danger').text('BAJA');
+
+                        // Deshabilitar los botones de acción en la fila
+                        $row.find('button').prop('disabled', true).addClass('disabled');
+
+                        // Si existe instancia de DataTable, invalidar y redibujar la fila
+                        if (window.alumnosTable) {
+                            window.alumnosTable.row($row).invalidate().draw(false);
+                        }
+                    } else {
+                        // Fallback: recargar si no se encuentra la fila
+                        window.location.reload();
+                    }
+                } else {
+                    r.json().then(j => alert(j?.message || 'Error al eliminar'));
+                }
+            }).catch(err => alert(err.message || 'Error al eliminar'));
         }
     </script>
 }

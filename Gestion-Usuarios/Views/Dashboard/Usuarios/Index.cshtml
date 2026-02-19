@@ -1,48 +1,27 @@
 ﻿@{
-    ViewData["Title"] = "Gestión de Alumnos";
+    ViewData["Title"] = "Gestión de Usuarios";
 }
 
 <div class="card shadow-sm">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="m-0 font-weight-bold text-primary"><i class="fa-solid fa-user-graduate me-2"></i>Listado de Alumnos</h5>
-        <button class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i> Nuevo Alumno</button>
+        <h5 class="m-0 font-weight-bold text-primary"><i class="fa-solid fa-users me-2"></i>Directorio General</h5>
+        <button class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i> Nuevo Usuario</button>
     </div>
     <div class="card-body">
         <table id="miTabla" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr>
-                    <th>Matrícula</th>
+                    <th>ID / Matrícula</th>
                     <th>Nombre Completo</th>
+                    <th>Rol</th>
                     <th>Carrera</th>
-                    <th>Semestre</th>
+                    <th>Grupo</th>
+                    <th>Correo</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>2023001</td>
-                    <td>Juan Pérez López</td>
-                    <td>Ing. Sistemas</td>
-                    <td><span class="badge bg-info">4° Sem</span></td>
-                    <td><span class="badge bg-success">Activo</span></td>
-                    <td>
-                        <button class="btn btn-primary btn-sm"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>2023002</td>
-                    <td>Maria Rodriguez</td>
-                    <td>Arquitectura</td>
-                    <td><span class="badge bg-info">2° Sem</span></td>
-                    <td><span class="badge bg-warning text-dark">Pendiente</span></td>
-                    <td>
-                        <button class="btn btn-primary btn-sm"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>
@@ -52,10 +31,65 @@
         $(document).ready(function () {
             $('#miTabla').DataTable({
                 responsive: true,
+                ajax: {
+                    url: '@Url.Action("GetUsersJson", "Usuarios")', // Llama al endpoint C#
+                    type: 'GET',
+                    datatype: 'json'
+                },
+                columns: [
+                    {
+                        data: 'identificador',
+                        render: function(data, type, row) {
+                            // Negritas para la matrícula/folio
+                            return `<span class="fw-bold">${data}</span>`;
+                        }
+                    },
+                    { data: 'nombreCompleto' },
+                    {
+                        data: 'roles',
+                        render: function(data) {
+                            // Badges según el rol
+                            if(data.includes('ADMIN')) return `<span class="badge bg-dark">${data}</span>`;
+                            if(data.includes('TEACHER')) return `<span class="badge bg-warning text-dark">${data}</span>`;
+                            return `<span class="badge bg-secondary">${data}</span>`;
+                        }
+                    },
+                    { data: 'carrera' },
+                    { data: 'grupo' },
+                    { data: 'correo' },
+                    {
+                        data: 'estado',
+                        render: function(data) {
+                            // Colores según estado del alumno/usuario
+                            let color = 'secondary';
+                            if (data === 'INSCRITO' || data === 'ACTIVO') color = 'success';
+                            else if (data === 'PREINSCRITO') color = 'info';
+                            else if (data === 'BAJA' || data === 'INACTIVO') color = 'danger';
+
+                            return `<span class="badge bg-${color}">${data}</span>`;
+                        }
+                    },
+                    {
+                        data: 'id',
+                        render: function (data) {
+                            return `
+                                <div class="btn-group" role="group">
+                                    <button onclick="editarUsuario(${data})" class="btn btn-primary btn-sm" title="Editar">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button onclick="eliminarUsuario(${data})" class="btn btn-danger btn-sm" title="Eliminar">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        },
+                        orderable: false,
+                        searchable: false
+                    }
+                ],
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
                 },
-                // Configuración de Botones de Exportación
                 layout: {
                     topStart: {
                         buttons: [
@@ -84,5 +118,18 @@
                 }
             });
         });
+
+        // Funciones placeholder para los botones
+        function editarUsuario(id) {
+            console.log("Editando ID: " + id);
+            // window.location.href = '/Usuarios/Edit/' + id;
+        }
+
+        function eliminarUsuario(id) {
+            if(confirm('¿Estás seguro de eliminar este usuario?')) {
+                console.log("Eliminando ID: " + id);
+                // Llamada ajax para delete...
+            }
+        }
     </script>
 }

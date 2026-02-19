@@ -1,30 +1,23 @@
 ﻿@{
-    ViewData["Title"] = "Historial de Movimientos";
+    ViewData["Title"] = "Bitácora de Usuarios";
 }
 
 <div class="card shadow-sm">
     <div class="card-header bg-dark text-white">
-        <h5 class="m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>Bitácora del Sistema</h5>
+        <h5 class="m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>Historial de Usuarios Registrados</h5>
     </div>
     <div class="card-body">
-        <table id="tablaHistorial" class="table table-bordered table-sm" style="width:100%">
-            <thead class="table-light">
+        <table id="tablaHistorial" class="table table-striped table-bordered table-sm" style="width:100%">
+            <thead class="table-dark">
                 <tr>
-                    <th>Fecha/Hora</th>
+                    <th>Fecha Registro</th>
                     <th>Usuario</th>
-                    <th>Acción</th>
-                    <th>Módulo</th>
-                    <th>Detalles</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>2023-10-25 10:30</td>
-                    <td>Admin</td>
-                    <td>Creación</td>
-                    <td>Alumnos</td>
-                    <td>Registró al alumno 2023001</td>
-                </tr>
             </tbody>
         </table>
     </div>
@@ -34,13 +27,31 @@
     <script>
         $(document).ready(function () {
             $('#tablaHistorial').DataTable({
-                order: [[0, 'desc']],
-                language: { url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json" },
-                layout: {
-                    topStart: {
-                        buttons: ['excel', 'pdf', 'print']
+                "ajax": {
+                    "url": "/Historicos/GetHistorial",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                "columns": [
+                    { "data": "fecha" },
+                    { "data": "usuario" },
+                    { "data": "nombreCompleto" },
+                    { "data": "email" },
+                    {
+                        "data": "estado",
+                        "render": function(data) {
+                            let clase = data === "Activo" ? "badge bg-success" : "badge bg-danger";
+                            return `<span class="${clase}">${data}</span>`;
+                        }
                     }
-                }
+                ],
+                "order": [[0, 'desc']],
+                "language": {
+                    "url": "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
+                },
+                "responsive": true,
+                "dom": 'Bfrtip',
+                "buttons": ['excel', 'pdf', 'print']
             });
         });
     </script>
