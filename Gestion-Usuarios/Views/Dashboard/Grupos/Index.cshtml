@@ -1,28 +1,31 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Gestión de Grupos";
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
-<div class="card shadow-sm">
+<div class="card shadow-sm border-0">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="m-0 text-primary"><i class="fa-solid fa-object-group me-2"></i>Listado de Grupos</h5>
-        <button class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i> Nuevo Grupo</button>
+        <h5 class="m-0 text-primary font-weight-bold">
+            <i class="fa-solid fa-object-group me-2"></i>Listado de Grupos
+        </h5>
+        <button class="btn btn-success btn-sm" onclick="nuevoGrupo()">
+            <i class="fa-solid fa-plus me-1"></i> Nuevo Grupo
+        </button>
     </div>
     <div class="card-body">
-        <table id="tablaGrupos" class="table table-striped table-bordered table-sm" style="width:100%">
-            <thead class="table-dark">
+        <table id="tablaGrupos" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
+            <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Clave</th>
                     <th>Nombre Grupo</th>
-                    <th>Carrera</th>
-                    <th>Turno</th>
+                    <th>Código Estado</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                @* Si pasas los datos por modelo, itera aquí. 
-                   Si usas AJAX (recomendado), deja el tbody vacío *@
+                @* Se llena via AJAX *@
             </tbody>
         </table>
     </div>
@@ -31,31 +34,70 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            $('#tablaGrupos').DataTable({
-                // Si decides usar carga por AJAX (más rápido):
-                // ajax: '/Grupos/GetGrupos',
-                // columns: [ { data: 'GroupID' }, { data: 'Code' }, ... ]
-
-                language: {
-                    url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
+            window.dtGrupos = $('#tablaGrupos').DataTable({
+                ajax: {
+                    url: '@Url.Action("GetGrupos", "Grupos")',
+                    type: 'GET',
+                    dataSrc: 'data'
                 },
-                responsive: true,
-                columnDefs: [
+                columns: [
+                    { data: 'id' },
+                    { data: 'nombre' },
+                    { data: 'estadoCodigo' },
                     {
-                        targets: -1, // Última columna (Acciones)
+                        data: 'esActivo',
                         render: function(data, type, row) {
-                            return `<button class="btn btn-info btn-sm"><i class="fa-solid fa-pen"></i></button>
-                                    <button class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>`;
+                            // Usamos la lógica de colores que definimos en GroupViewModel
+                            const badgeClass = data ? 'bg-success' : 'bg-danger';
+                            const text = data ? 'Activo' : 'Inactivo';
+                            return `<span class="badge ${badgeClass}">${text}</span>`;
                         }
                     },
                     {
-                        targets: 5, // Columna Estado
-                        render: function(data) {
-                            return data ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>';
+                        data: 'id',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="editarGrupo(${data})">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarGrupo(${data})">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>`;
                         }
                     }
-                ]
+                ],
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
+                },
+                responsive: true
             });
         });
+
+        function editarGrupo(id) {
+            console.log("Editando grupo:", id);
+            // window.location.href = `@Url.Action("Edit", "Grupos")/${id}`;
+        }
+
+        function eliminarGrupo(id) {
+            if (!confirm("¿Deseas eliminar este grupo?")) return;
+
+            fetch(`@Url.Action("Delete", "Grupos")/${id}`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': '@token' }
+            }).then(r => {
+                if (r.ok) {
+                    window.dtGrupos.ajax.reload(null, false); // Recarga sin perder la paginación
+                } else {
+                    alert("Error al eliminar el grupo");
+                }
+            });
+        }
+
+        function nuevoGrupo() {
+            // Lógica para abrir modal o redirigir
+        }
     </script>
 }

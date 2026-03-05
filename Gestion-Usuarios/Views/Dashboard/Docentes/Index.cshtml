@@ -1,16 +1,21 @@
 @model List<Gestion_Usuarios.Models.DocenteViewModel>
-
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Gestión de Docentes";
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
-<div class="card shadow-sm">
+<div class="card shadow-sm border-0">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="m-0 text-primary"><i class="fa-solid fa-chalkboard-teacher me-2"></i>Listado de Docentes</h5>
-        <button class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i> Nuevo Docente</button>
+        <h5 class="m-0 text-primary font-weight-bold">
+            <i class="fa-solid fa-chalkboard-teacher me-2"></i>Listado de Docentes
+        </h5>
+        <a href="@Url.Action("Create", "Docentes")" class="btn btn-success btn-sm">
+            <i class="fa-solid fa-plus me-1"></i> Nuevo Docente
+        </a>
     </div>
     <div class="card-body">
-        <table id="tablaDocentes" class="table table-striped table-hover" style="width:100%">
+        <table id="tablaDocentes" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr>
                     <th>No. Empleado</th>
@@ -26,28 +31,24 @@
                 {
                     @foreach (var docente in Model)
                     {
-                        <tr>
+                        <tr data-id="@docente.UserId">
                             <td>
-                                <span class="badge bg-secondary">@docente.management_teacher_EmployeeNumber</span>
+                                <span class="badge bg-secondary">@docente.NumeroEmpleado</span>
                             </td>
                             <td>@docente.NombreCompleto</td>
-                            <td>@docente.management_user_Email</td>
-                            <td>@docente.management_person_Phone</td>
+                            <td>@docente.Email</td>
+                            <td>@docente.Telefono</td>
                             <td>
-                                @if (docente.teacher_statuscode == "ACTIVO")
-                                {
-                                    <span class="badge bg-success">Activo</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-danger">@docente.teacher_statuscode</span>
-                                }
+                                @* Usamos la propiedad calculada BadgeClass *@
+                                <span class="badge @docente.BadgeClass">
+                                    @(docente.Estado == "ACTIVO" ? "Activo" : docente.Estado)
+                                </span>
                             </td>
                             <td>
-                                <button class="btn btn-primary btn-sm" onclick="editarDocente(@docente.management_user_ID)">
+                                <button class="btn btn-primary btn-sm" onclick="editarDocente(@docente.UserId)" title="Editar">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button class="btn btn-danger btn-sm" onclick="eliminarDocente(@docente.management_user_ID)">
+                                <button class="btn btn-danger btn-sm" onclick="eliminarDocente(@docente.UserId)" title="Desactivar">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </td>
@@ -68,21 +69,27 @@
                     url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
                 },
                 columnDefs: [
-                    { className: "text-center", targets: [0, 4, 5] }, // Centrar columnas específicas
-                    { orderable: false, targets: 5 } // Desactivar ordenamiento en acciones
+                    { className: "text-center", targets: [0, 4, 5] },
+                    { orderable: false, targets: 5 }
                 ]
             });
         });
 
         function editarDocente(id) {
-            // Lógica para redirigir o abrir modal
-            console.log("Editando docente usuario ID: " + id);
+            if(id) window.location.href = `@Url.Action("Edit", "Docentes")/${id}`;
         }
 
         function eliminarDocente(id) {
             if(confirm("¿Estás seguro de desactivar este docente?")) {
-                // Lógica de eliminación
-                console.log("Eliminando docente usuario ID: " + id);
+                fetch(`@Url.Action("Delete", "Docentes")/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': '@token'
+                    }
+                }).then(r => {
+                    if(r.ok) location.reload();
+                    else alert("Error al procesar la solicitud");
+                });
             }
         }
     </script>

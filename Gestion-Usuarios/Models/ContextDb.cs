@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 
 namespace Gestion_Usuarios.Models
 {
@@ -7,9 +6,17 @@ namespace Gestion_Usuarios.Models
 	{
 		public ContextDb(DbContextOptions<ContextDb> options) : base(options)
 		{
-
 		}
-		// public DbSet<Usuario> Usuarios { get; set; }
+
+		// Entidades principales para operaciones CRUD rápidas
 		public DbSet<ManagementUser> ManagementUsers { get; set; }
+
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			base.OnModelCreating(modelBuilder);
+
+			modelBuilder.Entity<ManagementUser>()
+				.HasKey(u => u.management_user_ID);
+		}
 	}
 }

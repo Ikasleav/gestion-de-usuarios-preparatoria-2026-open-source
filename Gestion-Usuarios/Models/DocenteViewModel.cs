@@ -1,25 +1,28 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
-namespace Gestion_Usuarios.Models
+﻿namespace Gestion_Usuarios.Models
 {
 	public class DocenteViewModel
 	{
-		// Datos de Usuario
-		public int management_user_ID { get; set; }
-		public string management_user_Email { get; set; }
+		// Identificadores
+		public int UserId { get; set; }
+		public int? TeacherId { get; set; }
 
-		// Datos de Persona
-		public string management_person_FirstName { get; set; }
-		public string management_person_LastNamePaternal { get; set; }
-		public string management_person_LastNameMaternal { get; set; }
-		public string management_person_Phone { get; set; }
+		// Datos de contacto
+		public string Email { get; set; } = string.Empty;
+		public string Telefono { get; set; } = string.Empty;
 
-		// Datos Específicos de Docente (Teacher)
-		public int? teacher_ID { get; set; } // Puede ser null si el usuario no es docente
-		public string management_teacher_EmployeeNumber { get; set; }
-		public string teacher_statuscode { get; set; } // ACTIVO, SUSPENDIDO, etc.
+		// Datos personales
+		public string Nombre { get; set; } = string.Empty;
+		public string ApellidoPaterno { get; set; } = string.Empty;
+		public string ApellidoMaterno { get; set; } = string.Empty;
 
-		// Propiedad extra para mostrar nombre completo fácilmente
-		public string NombreCompleto => $"{management_person_FirstName} {management_person_LastNamePaternal} {management_person_LastNameMaternal}";
+		// Datos laborales
+		public string NumeroEmpleado { get; set; } = string.Empty;
+		public string Estado { get; set; } = string.Empty; // ACTIVO, SUSPENDIDO
+
+		// Propiedad calculada
+		public string NombreCompleto => $"{Nombre} {ApellidoPaterno} {ApellidoMaterno}".Trim();
+
+		// Clase CSS para la vista
+		public string BadgeClass => Estado.ToUpper() == "ACTIVO" ? "bg-success" : "bg-warning";
 	}
 }

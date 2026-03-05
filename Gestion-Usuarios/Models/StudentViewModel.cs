@@ -5,70 +5,53 @@ namespace Gestion_Usuarios.Models
 {
 	public class StudentViewModel
 	{
-		// ID para las acciones (Editar/Eliminar)
-		// Mapea: s.management_student_ID
 		public int Id { get; set; }
 
-		// Mapea: s.management_student_Matricula
 		public string? Matricula { get; set; }
 
-		// Mapea: s.management_student_EnrollmentFolio
-		// Útil si el alumno es PREINSCRITO y aún no tiene matrícula
 		public string? Folio { get; set; }
 
-		// Para mostrar en la tabla, prefiere Matrícula, si no existe, muestra Folio
-		public string Identificador => !string.IsNullOrEmpty(Matricula) ? Matricula : Folio;
+		// Preferencia: Matrícula, si no existe Folio, si no empty
+		public string Identificador => Matricula ?? Folio ?? string.Empty;
 
 		// Datos Personales
-		// Mapea: p.management_person_FirstName
 		public string Nombres { get; set; } = string.Empty;
-
-		// Mapea: p.management_person_LastNamePaternal
 		public string ApellidoPaterno { get; set; } = string.Empty;
-
-		// Mapea: p.management_person_LastNameMaternal
 		public string? ApellidoMaterno { get; set; }
 
-		// Propiedad calculada para la columna "Nombre Completo"
-		public string NombreCompleto => $"{Nombres} {ApellidoPaterno} {ApellidoMaterno}".Trim();
-
-		// Mapea: c.management_career_Name
-		public string Carrera { get; set; } = "Sin Asignar";
-
-		// Mapea: Grado (calculado en el SP desde management_group_Code)
-		// Columna "Semestre" en la vista
-		public int? Semestre { get; set; }
-
-		// Mapea: s.management_student_StatusCode (ej. 'INSCRITO', 'PREINSCRITO', 'BAJA')
-		public string EstadoCodigo { get; set; } = string.Empty;
-
-		// Mapea: s.management_student_status (1 = Activo, 0 = Inactivo/Borrado lógico)
-		public bool EsActivo { get; set; }
-
-		// Mapea: p.management_person_CURP o person_CURP
-		public string? CURP { get; set; }
-
-		// Mapea: p.person_Email o management_person_Email
-		public string? Email { get; set; }
-
-		// Mapea: group_Code, group_Name o cálculo en el SP (texto que quieres mostrar en la columna "Grupo")
-		public string Grupo { get; set; } = string.Empty;
-
-		// Helpers para las Badges de la vista (Colores)
-		public string EstadoBadgeClass
+		// Nombre completo calculado y seguro ante nulos/espacios
+		public string NombreCompleto
 		{
 			get
 			{
-				if (!EsActivo) return "bg-danger"; // Baja lógica
-
-				return EstadoCodigo.ToUpper() switch
-				{
-					"INSCRITO" => "bg-success",    // Activo
-					"PREINSCRITO" => "bg-warning text-dark", // Pendiente
-					"BAJA" => "bg-danger",
-					_ => "bg-secondary"
-				};
+				var parts = new[] { Nombres, ApellidoPaterno, ApellidoMaterno };
+				return string.Join(' ', parts).Replace("  ", " ").Trim();
 			}
 		}
+
+		public string Carrera { get; set; } = "Sin Asignar";
+
+		public int? Semestre { get; set; }
+
+		public string EstadoCodigo { get; set; } = string.Empty;
+
+		public bool EsActivo { get; set; }
+
+		public string? CURP { get; set; }
+
+		public string? Email { get; set; }
+
+		public string Grupo { get; set; } = string.Empty;
+
+		// Clase CSS para badge, centralizada aquí
+		public string EstadoBadgeClass => !EsActivo
+			? "bg-danger"
+			: EstadoCodigo?.ToUpper() switch
+			{
+				"INSCRITO" => "bg-success",
+				"PREINSCRITO" => "bg-warning text-dark",
+				"BAJA" => "bg-danger",
+				_ => "bg-secondary"
+			};
 	}
 }
