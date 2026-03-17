@@ -12,7 +12,9 @@ namespace Gestion_Usuarios.Models
 		public string? Folio { get; set; }
 
 		// Preferencia: Matrícula, si no existe Folio, si no empty
-		public string Identificador => Matricula ?? Folio ?? string.Empty;
+		public string Identificador => !string.IsNullOrWhiteSpace(Matricula)
+			? Matricula
+			: Folio ?? string.Empty;
 
 		// Datos Personales
 		public string Nombres { get; set; } = string.Empty;

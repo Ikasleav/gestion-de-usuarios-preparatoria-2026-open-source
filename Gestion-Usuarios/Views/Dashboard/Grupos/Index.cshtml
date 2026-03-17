@@ -1,7 +1,8 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    ViewData["Title"] = "Gestión de Grupos";
+    ViewData["Title"] = "GestiÃ³n de Grupos";
     var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var isAdmin = User.HasAnyRole("ADMIN", "ADMINISTRADOR", "ADMINISTRATOR");
 }
 
 <div class="card shadow-sm border-0">
@@ -9,24 +10,54 @@
         <h5 class="m-0 text-primary font-weight-bold">
             <i class="fa-solid fa-object-group me-2"></i>Listado de Grupos
         </h5>
-        <button class="btn btn-success btn-sm" onclick="nuevoGrupo()">
-            <i class="fa-solid fa-plus me-1"></i> Nuevo Grupo
-        </button>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i>Menu
+            </a>
+            @if (isAdmin)
+            {
+                <button class="btn btn-success btn-sm" onclick="nuevoGrupo()">
+                    <i class="fa-solid fa-plus me-1"></i>Nuevo Grupo
+                </button>
+            }
+        </div>
     </div>
     <div class="card-body">
+        @if (TempData["GroupSuccess"] is string successMessage)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @successMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
+        @if (TempData["GroupError"] is string errorMessage)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @errorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
         <table id="tablaGrupos" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr>
                     <th>ID</th>
+                    @if (isAdmin)
+                    {
+                        <th>Carrera</th>
+                    }
+                    <th>CÃ³digo</th>
                     <th>Nombre Grupo</th>
-                    <th>Código Estado</th>
+                    <th>Turno</th>
                     <th>Estado</th>
-                    <th>Acciones</th>
+                    @if (isAdmin)
+                    {
+                        <th>Acciones</th>
+                    }
                 </tr>
             </thead>
-            <tbody>
-                @* Se llena via AJAX *@
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>
@@ -34,41 +65,64 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            const isAdmin = @isAdmin.ToString().ToLowerInvariant();
+            const columns = [
+                { data: 'id' }
+            ];
+
+            if (isAdmin) {
+                columns.push({
+                    data: 'carrera',
+                    render: function (data) {
+                        return data || 'Sin carrera';
+                    }
+                });
+            }
+
+            columns.push(
+                { data: 'codigo' },
+                { data: 'nombre' },
+                {
+                    data: 'turno',
+                    render: function(data) {
+                        return data || 'Sin turno';
+                    }
+                },
+                {
+                    data: 'esActivo',
+                    render: function(data) {
+                        const badgeClass = data ? 'bg-success' : 'bg-danger';
+                        const text = data ? 'Activo' : 'Inactivo';
+                        return `<span class="badge ${badgeClass}">${text}</span>`;
+                    }
+                }
+            );
+
+            if (isAdmin) {
+                columns.push({
+                    data: 'id',
+                    orderable: false,
+                    render: function(data) {
+                        return `
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editarGrupo(${data})">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="eliminarGrupo(${data})">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>`;
+                    }
+                });
+            }
+
             window.dtGrupos = $('#tablaGrupos').DataTable({
                 ajax: {
                     url: '@Url.Action("GetGrupos", "Grupos")',
                     type: 'GET',
                     dataSrc: 'data'
                 },
-                columns: [
-                    { data: 'id' },
-                    { data: 'nombre' },
-                    { data: 'estadoCodigo' },
-                    {
-                        data: 'esActivo',
-                        render: function(data, type, row) {
-                            // Usamos la lógica de colores que definimos en GroupViewModel
-                            const badgeClass = data ? 'bg-success' : 'bg-danger';
-                            const text = data ? 'Activo' : 'Inactivo';
-                            return `<span class="badge ${badgeClass}">${text}</span>`;
-                        }
-                    },
-                    {
-                        data: 'id',
-                        orderable: false,
-                        render: function(data, type, row) {
-                            return `
-                                <div class="btn-group">
-                                    <button class="btn btn-outline-primary btn-sm" onclick="editarGrupo(${data})">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarGrupo(${data})">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </div>`;
-                        }
-                    }
-                ],
+                columns: columns,
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
                 },
@@ -77,27 +131,29 @@
         });
 
         function editarGrupo(id) {
-            console.log("Editando grupo:", id);
-            // window.location.href = `@Url.Action("Edit", "Grupos")/${id}`;
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `@Url.Action("Edit", "Grupos")?id=${id}&returnUrl=${returnUrl}`;
         }
 
         function eliminarGrupo(id) {
-            if (!confirm("¿Deseas eliminar este grupo?")) return;
+            if (!confirm("Â¿Deseas eliminar este grupo?")) return;
 
             fetch(`@Url.Action("Delete", "Grupos")/${id}`, {
                 method: 'POST',
                 headers: { 'RequestVerificationToken': '@token' }
-            }).then(r => {
-                if (r.ok) {
-                    window.dtGrupos.ajax.reload(null, false); // Recarga sin perder la paginación
+            }).then(async r => {
+                const data = await r.json().catch(() => ({}));
+                if (r.ok && data.success) {
+                    window.dtGrupos.ajax.reload(null, false);
                 } else {
-                    alert("Error al eliminar el grupo");
+                    alert(data.message || "Error al eliminar el grupo");
                 }
             });
         }
 
         function nuevoGrupo() {
-            // Lógica para abrir modal o redirigir
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `@Url.Action("Create", "Grupos")?returnUrl=${returnUrl}`;
         }
     </script>
 }

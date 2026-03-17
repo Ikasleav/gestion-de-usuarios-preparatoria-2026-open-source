@@ -85,19 +85,26 @@
                         @if (!ViewData.ModelState.IsValid && ViewBag.ActiveForm == "register")
                         {
                             <div class="alert alert-danger">
-                                @foreach (var kv in ViewData.ModelState)
+                                @* Show all model-state errors for the register form so validation messages are visible *@
+                                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
                                 {
-                                    if (kv.Key.StartsWith("Register") || kv.Key.Contains("Username") || kv.Key.Contains("Email") || kv.Key.Contains("Password"))
-                                    {
-                                        foreach (var err in kv.Value.Errors)
-                                        {
-                                            <div>@err.ErrorMessage</div>
-                                        }
-                                    }
+                                    <div>@err.ErrorMessage</div>
                                 }
                             </div>
                         }
 
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input name="Nombre" value="@(Model?.Register?.Nombre ?? string.Empty)" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Apellido paterno</label>
+                            <input name="ApellidoPaterno" value="@(Model?.Register?.ApellidoPaterno ?? string.Empty)" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Apellido materno</label>
+                            <input name="ApellidoMaterno" value="@(Model?.Register?.ApellidoMaterno ?? string.Empty)" class="form-control" />
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">Usuario</label>
                             <input name="Username" value="@(Model?.Register?.Username ?? string.Empty)" class="form-control" />

@@ -4,8 +4,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var isSchool = builder.Configuration.GetValue<bool>("IsSchool");
+var connectionName = isSchool ? "Production" : "Local";
+
 builder.Services.AddDbContext<ContextDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Conexion")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString(connectionName)));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

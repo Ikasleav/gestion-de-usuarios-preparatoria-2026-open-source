@@ -1,8 +1,9 @@
-﻿@model IEnumerable<Gestion_Usuarios.Models.StudentViewModel>
+@model IEnumerable<Gestion_Usuarios.Models.StudentViewModel>
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Gestión de Alumnos";
     var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var isAdmin = User.HasAnyRole("ADMIN", "ADMINISTRADOR", "ADMINISTRATOR");
 }
 
 <div class="card shadow-sm">
@@ -10,11 +11,35 @@
         <h5 class="m-0 font-weight-bold text-primary">
             <i class="fa-solid fa-user-graduate me-2"></i>Listado de Alumnos
         </h5>
-        <a href="@Url.Action("Create", "Alumnos")" class="btn btn-success btn-sm">
-            <i class="fa-solid fa-plus me-1"></i> Nuevo Alumno
-        </a>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i>Menu
+            </a>
+            @if (isAdmin)
+            {
+                <a href="@Url.Action("Create", "Alumnos", new { returnUrl = Context.Request.Path + Context.Request.QueryString })" class="btn btn-success btn-sm">
+                    <i class="fa-solid fa-plus me-1"></i>Nuevo Alumno
+                </a>
+            }
+        </div>
     </div>
     <div class="card-body">
+        @if (TempData["StudentSuccess"] is string successMessage)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @successMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
+        @if (TempData["StudentError"] is string errorMessage)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @errorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
         <table id="miTabla" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr>
@@ -23,7 +48,10 @@
                     <th>Carrera</th>
                     <th>Semestre</th>
                     <th>Estado</th>
-                    <th>Acciones</th>
+                    @if (isAdmin)
+                    {
+                        <th>Acciones</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -50,17 +78,20 @@
                                     @item.EstadoCodigo
                                 </span>
                             </td>
-                            <td>
-                                <button class="btn btn-primary btn-sm" onclick="editarAlumno(@item.Id)" title="Editar">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                @if (item.EsActivo)
-                                {
-                                    <button class="btn btn-danger btn-sm" onclick="eliminarAlumno(@item.Id)" title="Dar de baja">
-                                        <i class="fa-solid fa-trash"></i>
+                            @if (isAdmin)
+                            {
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="editarAlumno(@item.Id)" title="Editar">
+                                        <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
-                                }
-                            </td>
+                                    @if (item.EsActivo)
+                                    {
+                                        <button class="btn btn-danger btn-sm" onclick="eliminarAlumno(@item.Id)" title="Dar de baja">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    }
+                                </td>
+                            }
                         </tr>
                     }
                 }
@@ -89,7 +120,8 @@
 
         function editarAlumno(id) {
             if (!id || id <= 0) return;
-            window.location.href = `@Url.Action("Edit", "Alumnos")/${id}`;
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `@Url.Action("Edit", "Alumnos")?id=${id}&returnUrl=${returnUrl}`;
         }
 
         function eliminarAlumno(id) {
@@ -99,27 +131,24 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'RequestVerificationToken': '@token' // Token de seguridad indispensable
+                    'RequestVerificationToken': '@token'
                 }
-            }).then(r => {
-                if (r.ok) {
+            }).then(async r => {
+                const data = await r.json().catch(() => ({}));
+
+                if (r.ok && data.success) {
                     const $row = $(`#miTabla tbody tr[data-id='${id}']`);
                     if ($row.length) {
-                        // Cambiar estado visualmente
-                        const $estadoCell = $row.find('td').eq(4);
-                        $estadoCell.find('span').removeClass().addClass('badge bg-danger').text('BAJA');
-
-                        // Deshabilitar botones
-                        $row.find('.btn-danger').remove(); // Quitamos el botón de eliminar
-
                         if (window.alumnosTable) {
-                            window.alumnosTable.row($row).invalidate().draw(false);
+                            window.alumnosTable.row($row).remove().draw(false);
+                        } else {
+                            $row.remove();
                         }
                     } else {
                         window.location.reload();
                     }
                 } else {
-                    alert('Error al procesar la solicitud.');
+                    alert(data.message || 'Error al procesar la solicitud.');
                 }
             }).catch(err => alert('Error de conexión: ' + err.message));
         }

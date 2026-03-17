@@ -1,17 +1,16 @@
 @{
-    ViewData["Title"] = "Módulo — Gestión de Usuarios";
+    ViewData["Title"] = "MÃ³dulo - GestiÃ³n de Usuarios";
 }
 
 <div class="container">
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="mb-0">Gestión de Usuarios</h2>
-            <p class="text-muted">Accede a las vistas internas del módulo</p>
+            <h2 class="mb-0">GestiÃ³n de Usuarios</h2>
+            <p class="text-muted">Accede a las vistas internas del mÃ³dulo</p>
         </div>
     </div>
 
     <div class="row g-4">
-        <!-- Usuarios -->
         <div class="col-12 col-sm-6 col-md-4">
             <a class="text-decoration-none" asp-controller="Usuarios" asp-action="Index">
                 <div class="card h-100 shadow-sm">
@@ -28,7 +27,6 @@
             </a>
         </div>
 
-        <!-- Alumnos -->
         <div class="col-12 col-sm-6 col-md-4">
             <a class="text-decoration-none" asp-controller="Alumnos" asp-action="Index">
                 <div class="card h-100 shadow-sm">
@@ -45,7 +43,6 @@
             </a>
         </div>
 
-        <!-- Docentes -->
         <div class="col-12 col-sm-6 col-md-4">
             <a class="text-decoration-none" asp-controller="Docentes" asp-action="Index">
                 <div class="card h-100 shadow-sm">
@@ -54,7 +51,7 @@
                             <div class="me-3 display-6 text-warning"><i class="fa-solid fa-chalkboard-user"></i></div>
                             <div>
                                 <h5 class="card-title mb-0">Docentes</h5>
-                                <small class="text-muted">(Vacío por ahora)</small>
+                                <small class="text-muted">CatÃ¡logo de docentes</small>
                             </div>
                         </div>
                     </div>
@@ -62,7 +59,6 @@
             </a>
         </div>
 
-        <!-- Históricos -->
         <div class="col-12 col-sm-6 col-md-4">
             <a class="text-decoration-none" asp-controller="Historicos" asp-action="Index">
                 <div class="card h-100 shadow-sm">
@@ -70,8 +66,8 @@
                         <div class="d-flex align-items-center">
                             <div class="me-3 display-6 text-secondary"><i class="fa-solid fa-folder-closed"></i></div>
                             <div>
-                                <h5 class="card-title mb-0">Históricos</h5>
-                                <small class="text-muted">(Vacío por ahora)</small>
+                                <h5 class="card-title mb-0">HistÃ³ricos</h5>
+                                <small class="text-muted">BitÃ¡cora de usuarios</small>
                             </div>
                         </div>
                     </div>
@@ -79,16 +75,15 @@
             </a>
         </div>
 
-        <!-- Grupos -->
         <div class="col-12 col-sm-6 col-md-4">
             <a class="text-decoration-none" asp-controller="Grupos" asp-action="Index">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
-                            <div class="me-3 display-6 text-secondary"><i class="fa-solid fa-folder-closed"></i></div>
+                            <div class="me-3 display-6 text-secondary"><i class="fa-solid fa-object-group"></i></div>
                             <div>
                                 <h5 class="card-title mb-0">Grupos</h5>
-                                <small class="text-muted">(Vacío por ahora)</small>
+                                <small class="text-muted">CatÃ¡logo de grupos</small>
                             </div>
                         </div>
                     </div>
@@ -96,16 +91,15 @@
             </a>
         </div>
 
-        <!-- Bajas -->
         <div class="col-12 col-sm-6 col-md-4">
-           <a class="text-decoration-none" asp-controller="Bajas" asp-action="Index">
+            <a class="text-decoration-none" asp-controller="Bajas" asp-action="Index">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="me-3 display-6 text-danger"><i class="fa-solid fa-user-slash"></i></div>
                             <div>
                                 <h5 class="card-title mb-0">Bajas</h5>
-                                <small class="text-muted">(Vacío por ahora)</small>
+                                <small class="text-muted">Alumnos inactivos</small>
                             </div>
                         </div>
                     </div>
@@ -113,7 +107,6 @@
             </a>
         </div>
 
-        <!-- Nuevo Ingreso -->
         <div class="col-12 col-sm-6 col-md-4">
             <a class="text-decoration-none" asp-controller="Nuevo_ingreso" asp-action="Index">
                 <div class="card h-100 shadow-sm">
@@ -122,7 +115,7 @@
                             <div class="me-3 display-6 text-success"><i class="fa-solid fa-user-plus"></i></div>
                             <div>
                                 <h5 class="card-title mb-0">Nuevo Ingreso</h5>
-                                <small class="text-muted">(Vacío por ahora)</small>
+                                <small class="text-muted">Aspirantes con folio</small>
                             </div>
                         </div>
                     </div>

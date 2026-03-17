@@ -1,8 +1,9 @@
-﻿@model IEnumerable<Gestion_Usuarios.Models.StudentViewModel>
+@model IEnumerable<Gestion_Usuarios.Models.StudentViewModel>
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    ViewData["Title"] = "Gestión de Nuevo Ingreso";
+    ViewData["Title"] = "Gestion de Nuevo Ingreso";
     var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var isAdmin = User.HasAnyRole("ADMIN", "ADMINISTRADOR", "ADMINISTRATOR");
 }
 
 <div class="card shadow-sm border-0">
@@ -10,21 +11,48 @@
         <h5 class="m-0 font-weight-bold text-primary">
             <i class="fa-solid fa-user-plus me-2"></i>Aspirantes - Nuevo Ingreso
         </h5>
-        <a href="@Url.Action("Create", "Alumnos")" class="btn btn-success btn-sm">
-            <i class="fa-solid fa-plus me-1"></i> Registrar Aspirante
-        </a>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i>Menu
+            </a>
+            @if (isAdmin)
+            {
+                <a href="@Url.Action("Create", "Alumnos", new { returnUrl = Context.Request.Path + Context.Request.QueryString })" class="btn btn-success btn-sm">
+                    <i class="fa-solid fa-plus me-1"></i>Registrar Aspirante
+                </a>
+            }
+        </div>
     </div>
     <div class="card-body">
+        @if (TempData["StudentSuccess"] is string successMessage)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @successMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
+        @if (TempData["StudentError"] is string errorMessage)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @errorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
         <table id="tablaNuevoIngreso" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr>
                     <th>Folio</th>
                     <th>Nombre Completo</th>
                     <th>CURP</th>
-                    <th>Correo Electrónico</th>
+                    <th>Correo Electronico</th>
                     <th>Carrera</th>
                     <th>Estado</th>
-                    <th>Acciones</th>
+                    @if (isAdmin)
+                    {
+                        <th>Acciones</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -39,20 +67,21 @@
                             <td>@item.Email</td>
                             <td>@item.Carrera</td>
                             <td>
-                                @* Usamos la lógica centralizada del modelo *@
                                 <span class="badge @item.EstadoBadgeClass">
                                     @item.EstadoCodigo
                                 </span>
                             </td>
-                            <td class="text-center">
-                                <button class="btn btn-outline-primary btn-sm" onclick="editarAlumno(@item.Id)" title="Editar">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm" onclick="eliminarAlumno(@item.Id)"
-                                        @(item.EstadoCodigo == "BAJA" ? "disabled" : "") title="Eliminar/Cancelar">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
+                            @if (isAdmin)
+                            {
+                                <td class="text-center">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="editarAlumno(@item.Id)" title="Editar">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarAlumno(@item.Id)" title="Soft delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            }
                         </tr>
                     }
                 }
@@ -62,10 +91,17 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/datatables_tools.js"></script>
     <script>
         $(document).ready(function () {
-            $('#tablaNuevoIngreso').DataTable({
-                responsive: true,
+            const options = {
+                searchBuilder: true,
+                colVis: true,
+                colReorder: true
+            };
+
+            const dt = new DataTableInitializer(options);
+            window.nuevoIngresoTable = dt.initialize('#tablaNuevoIngreso', {
                 language: {
                     url: 'https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json'
                 },
@@ -75,11 +111,14 @@
         });
 
         function editarAlumno(id) {
-            window.location.href = `@Url.Action("Edit", "Alumnos")/${id}`;
+            if (!id || id <= 0) return;
+
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `@Url.Action("Edit", "Alumnos")?id=${id}&returnUrl=${returnUrl}`;
         }
 
         function eliminarAlumno(id) {
-            if (!confirm('¿Deseas cancelar el proceso de este aspirante?')) return;
+            if (!confirm('Deseas aplicar la baja logica a este aspirante?')) return;
 
             fetch(`@Url.Action("Delete", "Alumnos")/${id}`, {
                 method: 'POST',
@@ -87,13 +126,20 @@
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': '@token'
                 }
-            }).then(r => {
-                if (r.ok) {
-                    location.reload();
+            }).then(async r => {
+                const data = await r.json().catch(() => ({}));
+
+                if (r.ok && data.success) {
+                    const $row = $(`#tablaNuevoIngreso tbody tr[data-id='${id}']`);
+                    if ($row.length && window.nuevoIngresoTable) {
+                        window.nuevoIngresoTable.row($row).remove().draw(false);
+                    } else {
+                        window.location.reload();
+                    }
                 } else {
-                    alert('No se pudo procesar la baja.');
+                    alert(data.message || 'No se pudo procesar la baja.');
                 }
-            }).catch(err => alert('Error: ' + err.message));
+            }).catch(err => alert('Error de conexion: ' + err.message));
         }
     </script>
 }

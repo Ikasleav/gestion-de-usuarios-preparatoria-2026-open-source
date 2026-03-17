@@ -1,12 +1,44 @@
-﻿@{
-    ViewData["Title"] = "Bitácora de Usuarios";
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "Bitacora de Usuarios";
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var isAdmin = User.HasAnyRole("ADMIN", "ADMINISTRADOR", "ADMINISTRATOR");
 }
 
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-dark text-white py-3">
-        <h5 class="m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>Bitácora de Usuarios Registrados</h5>
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 text-primary font-weight-bold">
+            <i class="fa-solid fa-clock-rotate-left me-2"></i>Bitacora de usuarios registrados
+        </h5>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i>Menu
+            </a>
+            @if (isAdmin)
+            {
+                <a href="@Url.Action("Create", "Usuarios", new { returnUrl = Context.Request.Path + Context.Request.QueryString })" class="btn btn-success btn-sm">
+                    <i class="fa-solid fa-plus me-1"></i>Nuevo Usuario
+                </a>
+            }
+        </div>
     </div>
     <div class="card-body">
+        @if (TempData["UserSuccess"] is string successMessage)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @successMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
+        @if (TempData["UserError"] is string errorMessage)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @errorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
         <table id="tablaHistorial" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr>
@@ -15,11 +47,13 @@
                     <th>Nombre Completo</th>
                     <th>Email</th>
                     <th>Estado</th>
+                    @if (isAdmin)
+                    {
+                        <th>Acciones</th>
+                    }
                 </tr>
             </thead>
-            <tbody>
-                @* Llenado automático vía AJAX *@
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>
@@ -27,37 +61,57 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            $('#tablaHistorial').DataTable({
-                "ajax": {
-                    "url": "@Url.Action("GetHistorial", "Historicos")",
-                    "type": "GET",
-                    "dataSrc": "data"
+            const isAdmin = @isAdmin.ToString().ToLowerInvariant();
+            const columns = [
+                {
+                    data: 'fechaFormateada',
+                    className: 'text-center'
                 },
-                "columns": [
-                    {
-                        "data": "fechaFormateada", // Usamos la propiedad calculada del ViewModel
-                        "className": "text-center"
-                    },
-                    { "data": "usuario" },
-                    { "data": "nombreCompleto" },
-                    { "data": "email" },
-                    {
-                        "data": "esActivo",
-                        "render": function(data, type, row) {
-                            // Usamos el label que definimos en el ViewModel
-                            const clase = data ? "badge bg-success" : "badge bg-danger";
-                            const texto = data ? "Activo" : "Inactivo";
-                            return `<span class="${clase}">${texto}</span>`;
-                        }
+                { data: 'usuario' },
+                { data: 'nombreCompleto' },
+                { data: 'email' },
+                {
+                    data: 'esActivo',
+                    render: function (data) {
+                        const clase = data ? 'badge bg-success' : 'badge bg-danger';
+                        const texto = data ? 'Activo' : 'Inactivo';
+                        return `<span class="${clase}">${texto}</span>`;
                     }
-                ],
-                "order": [[0, 'desc']], // Los más recientes primero
-                "language": {
-                    "url": "https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json"
+                }
+            ];
+
+            if (isAdmin) {
+                columns.push({
+                    data: 'id',
+                    orderable: false,
+                    render: function (data) {
+                        return `
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editarUsuario(${data})" title="Editar">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="eliminarUsuario(${data})" title="Soft delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>`;
+                    }
+                });
+            }
+
+            window.historialTable = $('#tablaHistorial').DataTable({
+                ajax: {
+                    url: '@Url.Action("GetHistorial", "Historicos")',
+                    type: 'GET',
+                    dataSrc: 'data'
                 },
-                "responsive": true,
-                "dom": 'Bfrtip',
-                "buttons": [
+                columns: columns,
+                order: [[0, 'desc']],
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json'
+                },
+                responsive: true,
+                dom: 'Bfrtip',
+                buttons: [
                     {
                         extend: 'excelHtml5',
                         className: 'btn btn-success btn-sm',
@@ -76,5 +130,31 @@
                 ]
             });
         });
+
+        function editarUsuario(id) {
+            if (!id || id <= 0) return;
+
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `@Url.Action("Edit", "Usuarios")?id=${id}&returnUrl=${returnUrl}`;
+        }
+
+        function eliminarUsuario(id) {
+            if (!confirm('Deseas aplicar la baja logica a este usuario?')) return;
+
+            fetch(`@Url.Action("Delete", "Usuarios")/${id}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': '@token'
+                }
+            }).then(async r => {
+                const data = await r.json().catch(() => ({}));
+
+                if (r.ok && data.success) {
+                    window.historialTable.ajax.reload(null, false);
+                } else {
+                    alert(data.message || 'No se pudo procesar la solicitud.');
+                }
+            }).catch(err => alert('Error de conexion: ' + err.message));
+        }
     </script>
 }

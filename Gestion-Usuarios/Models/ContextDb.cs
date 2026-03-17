@@ -10,8 +10,9 @@ namespace Gestion_Usuarios.Models
 
 		// Entidades principales para operaciones CRUD rápidas
 		public DbSet<ManagementUser> ManagementUsers { get; set; }
+        public DbSet<ManagementPerson> ManagementPersons { get; set; }
 
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);
 
