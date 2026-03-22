@@ -1,6 +1,6 @@
 @model Gestion_Usuarios.Models.StudentEditViewModel
 @{
-    ViewData["Title"] = "Registrar Alumno";
+    ViewData["Title"] = "Editar Alumno";
     var backUrl = Url.IsLocalUrl(Model.ReturnUrl)
         ? Model.ReturnUrl
         : Url.Action("Index", "Alumnos");
@@ -9,9 +9,9 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1 text-primary">
-            <i class="fa-solid fa-user-plus me-2"></i>Registrar Alumno / Aspirante
+            <i class="fa-solid fa-user-pen me-2"></i>Editar Alumno
         </h4>
-        <p class="text-muted mb-0">Captura la información básica y asigna carrera y grupo cuando corresponda.</p>
+        <p class="text-muted mb-0">Actualiza la información del alumno y cambia su asignación académica cuando haga falta.</p>
     </div>
     <a href="@backUrl" class="btn btn-outline-secondary btn-sm">
         <i class="fa-solid fa-arrow-left me-1"></i>Volver
@@ -20,9 +20,12 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <form asp-action="Create" asp-controller="Alumnos" method="post" novalidate>
+        <form asp-action="Edit" asp-controller="Alumnos" method="post" novalidate>
             @Html.AntiForgeryToken()
+            <input asp-for="Id" type="hidden" />
             <input asp-for="ReturnUrl" type="hidden" />
+            <input asp-for="EstadoCodigo" type="hidden" />
+            <input asp-for="EsActivo" type="hidden" />
 
             @if (!ViewData.ModelState.IsValid)
             {
@@ -40,6 +43,11 @@
                     <label asp-for="Folio" class="form-label"></label>
                     <input asp-for="Folio" class="form-control" />
                     <span asp-validation-for="Folio" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Estado actual</label>
+                    <input value="@Model.EstadoCodigo" class="form-control" readonly />
                 </div>
 
                 <div class="col-md-4">
@@ -73,6 +81,11 @@
                 </div>
 
                 <div class="col-md-4">
+                    <label class="form-label">Semestre detectado</label>
+                    <input value="@(Model.Semestre?.ToString() ?? "N/A")" class="form-control" readonly />
+                </div>
+
+                <div class="col-md-6">
                     <label asp-for="CareerId" class="form-label"></label>
                     <select asp-for="CareerId" class="form-select">
                         <option value="">Sin carrera</option>
@@ -84,7 +97,7 @@
                     <span asp-validation-for="CareerId" class="text-danger small"></span>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label asp-for="GroupId" class="form-label"></label>
                     <select asp-for="GroupId" class="form-select">
                         <option value="">Sin grupo</option>
@@ -99,8 +112,8 @@
 
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="@backUrl" class="btn btn-light">Cancelar</a>
-                <button type="submit" class="btn btn-success">
-                    <i class="fa-solid fa-plus me-1"></i>Registrar
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Guardar cambios
                 </button>
             </div>
         </form>

@@ -1,15 +1,15 @@
 @model IEnumerable<Gestion_Usuarios.Models.StudentViewModel>
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    ViewData["Title"] = "Historico de Bajas";
+    ViewData["Title"] = "Gestion de Nuevo Ingreso";
     var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
     var isAdmin = User.HasAnyRole("ADMIN", "ADMINISTRADOR", "ADMINISTRATOR");
 }
 
 <div class="card shadow-sm border-0">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="m-0 font-weight-bold text-danger">
-            <i class="fa-solid fa-user-minus me-2"></i>Alumnos en situacion de baja
+        <h5 class="m-0 font-weight-bold text-primary">
+            <i class="fa-solid fa-user-plus me-2"></i>Aspirantes - Nuevo Ingreso
         </h5>
         <div class="d-flex gap-2">
             <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary btn-sm">
@@ -18,7 +18,7 @@
             @if (isAdmin)
             {
                 <a href="@Url.Action("Create", "Alumnos", new { returnUrl = Context.Request.Path + Context.Request.QueryString })" class="btn btn-success btn-sm">
-                    <i class="fa-solid fa-plus me-1"></i>Nuevo Alumno
+                    <i class="fa-solid fa-plus me-1"></i>Registrar Aspirante
                 </a>
             }
         </div>
@@ -40,15 +40,14 @@
             </div>
         }
 
-        <table id="miTablaBajas" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
+        <table id="tablaNuevoIngreso" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr>
-                    <th>Matricula / Folio</th>
+                    <th>Folio</th>
                     <th>Nombre Completo</th>
                     <th>CURP</th>
                     <th>Correo Electronico</th>
                     <th>Carrera</th>
-                    <th>Grupo</th>
                     <th>Estado</th>
                     @if (isAdmin)
                     {
@@ -62,12 +61,11 @@
                     foreach (var item in Model)
                     {
                         <tr data-id="@item.Id">
-                            <td><strong>@item.Identificador</strong></td>
+                            <td><span class="badge bg-light text-dark border">@item.Identificador</span></td>
                             <td>@item.NombreCompleto</td>
-                            <td><small class="text-muted">@item.CURP</small></td>
+                            <td><code class="text-dark">@item.CURP</code></td>
                             <td>@item.Email</td>
                             <td>@item.Carrera</td>
-                            <td>@item.Grupo</td>
                             <td>
                                 <span class="badge @item.EstadoBadgeClass">
                                     @item.EstadoCodigo
@@ -75,7 +73,7 @@
                             </td>
                             @if (isAdmin)
                             {
-                                <td>
+                                <td class="text-center">
                                     <button class="btn btn-outline-primary btn-sm" onclick="editarAlumno(@item.Id)" title="Editar">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
@@ -103,10 +101,12 @@
             };
 
             const dt = new DataTableInitializer(options);
-            window.bajasTable = dt.initialize('#miTablaBajas', {
+            window.nuevoIngresoTable = dt.initialize('#tablaNuevoIngreso', {
                 language: {
                     url: 'https://cdn.datatables.net/plug-ins/2.0.0/i18n/es-ES.json'
-                }
+                },
+                pageLength: 10,
+                order: [[1, 'asc']]
             });
         });
 
@@ -118,7 +118,7 @@
         }
 
         function eliminarAlumno(id) {
-            if (!confirm('Deseas aplicar la baja logica al alumno seleccionado?')) return;
+            if (!confirm('Deseas aplicar la baja logica a este aspirante?')) return;
 
             fetch(`@Url.Action("Delete", "Alumnos")/${id}`, {
                 method: 'POST',
@@ -130,9 +130,9 @@
                 const data = await r.json().catch(() => ({}));
 
                 if (r.ok && data.success) {
-                    const $row = $(`#miTablaBajas tbody tr[data-id='${id}']`);
-                    if ($row.length && window.bajasTable) {
-                        window.bajasTable.row($row).remove().draw(false);
+                    const $row = $(`#tablaNuevoIngreso tbody tr[data-id='${id}']`);
+                    if ($row.length && window.nuevoIngresoTable) {
+                        window.nuevoIngresoTable.row($row).remove().draw(false);
                     } else {
                         window.location.reload();
                     }
